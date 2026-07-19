@@ -1,31 +1,53 @@
-from typing import Dict, Any, List
+import json
+from typing import Dict, Any
+from backend.utils.prompt_loader import load_prompt
+from backend.services.gemini_service import gemini_service
+from backend.utils.logger import logger
 
 class OrchestratorAgent:
     def process(self, query: str) -> Dict[str, Any]:
         """
-        Orchestration analysis to select matching sub-agents.
+        Orchestration analysis using Gemini to select matching sub-agents.
         """
+        logger.info(f"OrchestratorAgent processing query: {query}")
+        
+        # Load prompt markdown template
+        try:
+            formatted_prompt = load_prompt("orchestrator", {"QUERY": query})
+        except Exception as e:
+            logger.error(f"Failed to load orchestrator prompt: {str(e)}")
+            return self._get_fallback(query)
+
+        # Local fallback representation if Gemini call fails
+        fallback_json = json.dumps(self._get_fallback(query))
+
+        # Call Gemini model
+        result = gemini_service.generate_json(formatted_prompt, fallback_json)
+        logger.info(f"OrchestratorAgent query classification result: {result}")
+        return result
+
+    def _get_fallback(self, query: str) -> Dict[str, Any]:
         query_lower = query.lower()
         if "navigation" in query_lower or "route" in query_lower or "gate" in query_lower or "walk" in query_lower:
             intent = "navigation"
             selected_agents = ["navigation"]
-            message = "Routing query successfully matched with Navigation Agent."
+            message = "Fallback: Routing query matched with Navigation Agent."
         elif "crowd" in query_lower or "capacity" in query_lower or "full" in query_lower or "attendance" in query_lower:
             intent = "crowd"
             selected_agents = ["crowd"]
-            message = "Crowd density query successfully matched with Crowd Agent."
+            message = "Fallback: Crowd density query matched with Crowd Agent."
         elif "emergency" in query_lower or "help" in query_lower or "medical" in query_lower or "incident" in query_lower or "alert" in query_lower:
             intent = "emergency"
             selected_agents = ["emergency"]
-            message = "Incident notification successfully matched with Emergency Agent."
+            message = "Fallback: Incident notification matched with Emergency Agent."
         elif "accessible" in query_lower or "wheelchair" in query_lower or "elevator" in query_lower or "assistance" in query_lower:
             intent = "accessibility"
             selected_agents = ["accessibility"]
-            message = "Special mobility query successfully matched with Accessibility Agent."
+            message = "Fallback: Special mobility query matched with Accessibility Agent."
         else:
-            intent = "general"
-            selected_agents = ["navigation", "crowd", "emergency", "accessibility"]
-            message = "General enquiry: dispatching query parameters to all analytics agents."
+            intent = "navigation"
+            selected_agents = ["navigation"]
+            message = "Fallback: General query matching default navigation pathway."
 
         return {
             "intent": intent,

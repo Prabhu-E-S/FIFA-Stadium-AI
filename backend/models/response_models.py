@@ -1,10 +1,18 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Any, Dict
+
+class DecisionResponse(BaseModel):
+    summary: str = Field(..., description="Operational summary of compiled warnings and queries")
+    recommendation: str = Field(..., description="Final response action recommendation")
+    priority: str = Field(..., description="Response severity priority (Low | Medium | High)")
+    confidence: int = Field(..., description="Confidence percentage score (0-100)")
 
 class OrchestratorResponse(BaseModel):
     intent: str = Field(..., description="Identified routing intent")
     selected_agents: List[str] = Field(..., description="List of targeted sub-agent identifiers")
     message: str = Field(..., description="Summary explanation status")
+    sub_agent_responses: Optional[List[Dict[str, Any]]] = Field(default=[], description="JSON responses outputted by selected sub-agents")
+    decision: Optional[DecisionResponse] = Field(default=None, description="Compiled multi-agent final decision")
 
 class NavigationResponse(BaseModel):
     gate: str = Field(..., description="Target exit or entry gate")

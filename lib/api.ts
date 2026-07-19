@@ -1,9 +1,24 @@
 const API_BASE = 'http://localhost:8000/api';
 
+export interface DecisionResponse {
+    summary: string;
+    recommendation: string;
+    priority: string;
+    confidence: number;
+}
+
+export interface SubAgentResponse {
+    agent: string;
+    status: 'success' | 'warning' | 'danger' | 'info';
+    data: Record<string, unknown>;
+}
+
 export interface OrchestratorResponse {
     intent: string;
     selected_agents: string[];
     message: string;
+    sub_agent_responses?: SubAgentResponse[];
+    decision?: DecisionResponse;
 }
 
 export interface NavigationResponse {

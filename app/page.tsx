@@ -17,8 +17,10 @@ import {
   Search,
   Terminal,
   Send,
-  Loader2
+  Loader2,
+  GitBranch
 } from 'lucide-react';
+import Link from 'next/link';
 
 import PageContainer from '@/components/common/page-container';
 import StatCard from '@/components/common/stat-card';
@@ -100,7 +102,7 @@ export default function DashboardPage() {
       const response = await callOrchestrator(query);
       setOrchestratorResult(response);
 
-      // Dynamically fetch and update the agent metric triggered by the orchestrator
+      // Dynamically fetch and update the local agent metrics triggered by the orchestrator
       if (response.selected_agents.includes('navigation')) {
         const nav = await callNavigation(query);
         setNavData(nav);
@@ -268,29 +270,35 @@ export default function DashboardPage() {
             <div className="flex flex-col border border-zinc-800/85 bg-zinc-900/60 p-4 rounded-2xl min-w-[130px]">
               <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">CROWD STATUS</span>
               <span className="text-lg font-bold text-white mt-1">SECURE</span>
-              <span className="text-[10px] text-emerald-450 font-bold mt-0.5">NORMAL FLOW</span>
+              <span className="text-[10px] text-emerald-400 font-bold mt-0.5">NORMAL FLOW</span>
             </div>
             <div className="flex flex-col border border-zinc-800/85 bg-zinc-900/60 p-4 rounded-2xl min-w-[130px]">
               <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">INCIDENTS</span>
               <span className="text-lg font-bold text-white mt-1">2 PLANNED</span>
-              <span className="text-[10px] text-zinc-405 font-bold mt-0.5">0 CRITICAL</span>
+              <span className="text-[10px] text-yellow-500 font-bold mt-0.5">0 CRITICAL</span>
             </div>
           </div>
         </div>
       </motion.div>
 
-      {/* AI Orchestrator Console (New Section) */}
+      {/* AI Orchestrator Console */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.15 }}
         className="rounded-3xl border border-zinc-800/80 bg-zinc-900/30 p-6 backdrop-blur-md space-y-4"
       >
-        <div className="flex items-center gap-2 text-white">
-          <Terminal className="h-5 w-5 text-blue-400" />
-          <h2 className="text-base font-bold">AI Multi-Agent Orchestrator</h2>
+        <div className="flex items-center justify-between text-white">
+          <div className="flex items-center gap-2">
+            <Terminal className="h-5 w-5 text-blue-400" />
+            <h2 className="text-base font-bold">AI Multi-Agent Orchestrator</h2>
+          </div>
+          <Link href="/workflow" className="flex items-center gap-1.5 rounded-lg border border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 px-3 py-1 text-xs font-bold text-blue-400 duration-200">
+            <GitBranch className="h-3.5 w-3.5" />
+            <span>Interactive Workflow View</span>
+          </Link>
         </div>
-        <p className="text-xs text-zinc-450">
+        <p className="text-xs text-zinc-400">
           Input an operational command or enquiry. The Orchestrator will classify the intent and trigger the correct analytics agents.
         </p>
 
@@ -302,7 +310,7 @@ export default function DashboardPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="e.g. Find wheelchair routings, check crowd capacity of east stand, safety status..."
-              className="w-full h-10 rounded-xl border border-zinc-800/90 bg-zinc-950/80 pl-10 pr-4 text-xs text-white placeholder-zinc-550 outline-none focus:border-blue-500/80 transition-all"
+              className="w-full h-10 rounded-xl border border-zinc-800/90 bg-zinc-950/80 pl-10 pr-4 text-xs text-white placeholder-zinc-650 outline-none focus:border-blue-500/80 transition-all"
             />
           </div>
           <button
@@ -323,22 +331,83 @@ export default function DashboardPage() {
 
         {/* Display Orchestrator Results */}
         {orchestratorResult && (
-          <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider font-mono">
-                Intent: {orchestratorResult.intent}
-              </span>
-              <div className="flex gap-1.5">
-                {orchestratorResult.selected_agents.map((agt) => (
-                  <span key={agt} className="rounded bg-blue-600/20 border border-blue-500/30 px-2 py-0.5 text-[10px] font-semibold text-blue-300 capitalize">
-                    {agt} agent
+          <div className="space-y-4 pt-2">
+            {/* Step 1: Orchestration Info */}
+            <div className="rounded-2xl border border-zinc-800/80 bg-zinc-950/50 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-blue-500 animate-ping" />
+                  <span className="text-xs font-bold text-zinc-300 uppercase tracking-wider font-mono">
+                    PIPELINE INTENT: {orchestratorResult.intent}
                   </span>
+                </div>
+                <div className="flex gap-1.5 flex-wrap">
+                  {orchestratorResult.selected_agents.map((agt) => (
+                    <span key={agt} className="rounded-full bg-blue-500/10 border border-blue-500/30 px-2.5 py-0.5 text-[10px] font-semibold text-blue-400 capitalize">
+                      {agt} agent active
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <p className="text-xs text-zinc-400">
+                {orchestratorResult.message}
+              </p>
+            </div>
+
+            {/* Step 2: Individual Sub-Agent Telemetry Outputs */}
+            {orchestratorResult.sub_agent_responses && orchestratorResult.sub_agent_responses.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                {orchestratorResult.sub_agent_responses.map((agentData, idx) => (
+                  <div key={idx} className="rounded-xl border border-zinc-805 bg-zinc-900/40 p-3.5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-white capitalize">{agentData.agent} Agent</span>
+                      <StatusBadge status={agentData.status} label={agentData.status?.toUpperCase() || 'SUCCESS'} />
+                    </div>
+                    <div className="text-[11px] text-zinc-400 font-mono space-y-1">
+                      {Object.entries(agentData.data || {}).map(([key, val]) => (
+                        <div key={key} className="flex justify-between">
+                          <span className="text-zinc-500">{key}:</span>
+                          <span className="text-zinc-305 font-semibold truncate max-w-[120px]">{String(val)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
-            </div>
-            <p className="text-xs text-zinc-300 font-medium leading-relaxed">
-              {orchestratorResult.message}
-            </p>
+            )}
+
+            {/* Step 3: Decision Output */}
+            {orchestratorResult.decision && (
+              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.02] p-5 space-y-4">
+                <div className="flex items-center justify-between border-b border-zinc-800/60 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4.5 w-4.5 text-emerald-400" />
+                    <span className="text-sm font-bold text-white">Central Decision Recommendation</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] text-zinc-450 font-bold">CONFIDENCE: {orchestratorResult.decision.confidence}%</span>
+                    <StatusBadge
+                      status={orchestratorResult.decision.priority === 'High' ? 'danger' : orchestratorResult.decision.priority === 'Medium' ? 'warning' : 'success'}
+                      label={`${orchestratorResult.decision.priority} Priority`}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold text-zinc-300 font-mono">OPERATIONAL SUMMARY:</h4>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    {orchestratorResult.decision.summary}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-1">
+                  <h4 className="text-xs font-semibold text-emerald-400">DIRECTED ACTION INSTRUCTIONS:</h4>
+                  <p className="text-xs text-white leading-relaxed font-bold">
+                    {orchestratorResult.decision.recommendation}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </motion.div>
@@ -417,7 +486,7 @@ export default function DashboardPage() {
               className="rounded-2xl border border-zinc-800/80 bg-gradient-to-b from-zinc-900/60 to-zinc-950/20 p-5 backdrop-blur-md"
             >
               <div className="flex justify-between items-center pb-4 border-b border-zinc-800/60">
-                <span className="text-[10px] font-bold text-zinc-450 tracking-wider">MATCHDAY 3 - GROUP A</span>
+                <span className="text-[10px] font-bold text-zinc-550 tracking-wider">MATCHDAY 3 - GROUP A</span>
                 <StatusBadge status="success" label="NORMAL SECURITY" />
               </div>
 
@@ -443,7 +512,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 pt-4 border-t border-zinc-800/60 text-xs font-medium text-zinc-405">
+              <div className="grid grid-cols-2 gap-3 pt-4 border-t border-zinc-800/60 text-xs font-medium text-zinc-450">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-3.5 w-3.5 text-zinc-500" />
                   <span>MetLife Stadium, NJ</span>

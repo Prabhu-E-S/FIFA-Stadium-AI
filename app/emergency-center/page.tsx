@@ -1,19 +1,51 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import PageContainer from '@/components/common/page-container';
 import SectionHeader from '@/components/common/section-header';
 import DashboardCard from '@/components/common/dashboard-card';
 import StatCard from '@/components/common/stat-card';
 import StatusBadge from '@/components/common/status-badge';
-import { ShieldAlert, Users, Phone, Zap, HeartHandshake, CloudRain } from 'lucide-react';
+import { ShieldAlert, Users, Phone, Zap, HeartHandshake, CloudRain, Loader2 } from 'lucide-react';
+import { callEmergency, EmergencyResponse } from '@/lib/api';
 
 export default function EmergencyCenterPage() {
+    const [emergencyData, setEmergencyData] = useState<EmergencyResponse | null>(null);
+    const [loading, setLoading] = useState(false);
+
     const dispatches = [
-        { team: 'Response Squad Alpha (Security)', task: ' Northwest Gate access dispute', location: 'Gate 2B', status: 'ongoing' as const },
+        { team: 'Response Squad Alpha (Security)', task: 'Northwest Gate access dispute', location: 'Gate 2B', status: 'ongoing' as const },
         { team: 'Medical Team 2', task: 'Heat exhaustion, Row 14 Seat 22', location: 'Section 104', status: 'resolved' as const },
         { team: 'Response Squad Gamma (Security)', task: 'Suspicious backpack investigation', location: 'Zone C Escalators', status: 'ongoing' as const },
     ];
+
+    const fetchEmergency = async () => {
+        setLoading(true);
+        try {
+            const data = await callEmergency();
+            setEmergencyData(data);
+        } catch (e) {
+            console.error("Failed to query emergency API:", e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchEmergency();
+    }, []);
+
+    const displayedDispatches = emergencyData
+        ? [
+            {
+                team: 'AI Recommended Dispatch',
+                task: emergencyData.recommended_action,
+                location: `Priority: ${emergencyData.priority}`,
+                status: 'ongoing' as const
+            },
+            ...dispatches
+        ]
+        : dispatches;
 
     return (
         <PageContainer>
@@ -21,8 +53,16 @@ export default function EmergencyCenterPage() {
                 title="Emergency & Security Dispatch"
                 description="Rapid security dispatch, medical requests logging, and containment control."
                 actions={
-                    <button className="flex items-center gap-2 rounded-xl bg-red-950 border border-red-900/60 px-4 py-2 text-xs font-bold text-red-100 hover:bg-red-900 transition-all active:scale-95 duration-200">
-                        <Phone className="h-3.5 w-3.5" />
+                    <button
+                        onClick={fetchEmergency}
+                        disabled={loading}
+                        className="flex items-center gap-2 rounded-xl bg-red-950 border border-red-900/60 px-4 py-2 text-xs font-bold text-red-100 hover:bg-red-900 transition-all active:scale-95 duration-200 disabled:opacity-50"
+                    >
+                        {loading ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                            <Phone className="h-3.5 w-3.5" />
+                        )}
                         <span>Trigger Mass Advisory Warning</span>
                     </button>
                 }
@@ -32,12 +72,12 @@ export default function EmergencyCenterPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <StatCard
                     title="Active Red Alarms"
-                    value="0 Critical"
-                    change="System Solid"
+                    value={emergencyData ? `${emergencyData.priority} Priority` : "0 Critical"}
+                    change={emergencyData ? "LIVE BACKEND" : "System Solid"}
                     changeType="neutral"
                     icon={ShieldAlert}
-                    status="success"
-                    description="All critical telemetry points reporting secure"
+                    status={emergencyData?.priority === 'High' ? 'danger' : 'success'}
+                    description={emergencyData ? `Instruction: ${emergencyData.recommended_action}` : "All critical telemetry points reporting secure"}
                 />
                 <StatCard
                     title="Deployed Personnel"
@@ -50,12 +90,12 @@ export default function EmergencyCenterPage() {
                 />
                 <StatCard
                     title="Avg Dispatch Latency"
-                    value="45 seconds"
-                    change="-15s this hour"
-                    changeType="decrease"
+                    value={emergencyData ? `${emergencyData.eta} ETA` : "45 seconds"}
+                    change={emergencyData ? "LIVE RESPONSE" : "-15s this hour"}
+                    changeType={emergencyData ? "neutral" : "decrease"}
                     icon={Zap}
                     status="success"
-                    description="Time from alert confirmation code to squad dispatch"
+                    description={emergencyData ? `Time to target: ${emergencyData.eta}` : "Time from alert confirmation code to squad dispatch"}
                 />
             </div>
 
@@ -69,7 +109,7 @@ export default function EmergencyCenterPage() {
                         icon={ShieldAlert}
                     >
                         <div className="space-y-4 mt-2">
-                            {dispatches.map((disp, idx) => (
+                            {displayedDispatches.map((disp, idx) => (
                                 <div key={idx} className="flex flex-col gap-2 p-4 rounded-xl border border-zinc-800/80 bg-zinc-950/30">
                                     <div className="flex items-center justify-between">
                                         <span className="text-xs font-bold text-white uppercase">{disp.team}</span>
@@ -81,7 +121,7 @@ export default function EmergencyCenterPage() {
                                     <p className="text-xs text-zinc-450">
                                         <span className="font-semibold text-zinc-300">Assignment:</span> {disp.task}
                                     </p>
-                                    <p className="text-[10px] text-zinc-500 font-medium">Located at: {disp.location}</p>
+                                    <p className="text-[10px] text-zinc-500 font-medium">{disp.location}</p>
                                 </div>
                             ))}
                         </div>

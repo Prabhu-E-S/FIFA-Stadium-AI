@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, Variants } from 'framer-motion';
 import {
   Users,
@@ -13,7 +13,11 @@ import {
   Activity,
   ChevronRight,
   AlertOctagon,
-  Sparkles
+  Sparkles,
+  Search,
+  Terminal,
+  Send,
+  Loader2
 } from 'lucide-react';
 
 import PageContainer from '@/components/common/page-container';
@@ -21,6 +25,19 @@ import StatCard from '@/components/common/stat-card';
 import AlertCard from '@/components/common/alert-card';
 import TimelineCard from '@/components/common/timeline-card';
 import StatusBadge from '@/components/common/status-badge';
+
+import {
+  callOrchestrator,
+  callNavigation,
+  callCrowd,
+  callEmergency,
+  callAccessibility,
+  OrchestratorResponse,
+  NavigationResponse,
+  CrowdResponse,
+  EmergencyResponse,
+  AccessibilityResponse
+} from '@/lib/api';
 
 // Container Variants for stagger animation
 const containerVariants: Variants = {
@@ -39,25 +56,92 @@ const itemVariants: Variants = {
 };
 
 export default function DashboardPage() {
-  // Static placeholders
+  // AI Orchestrator Console state
+  const [query, setQuery] = useState('');
+  const [orchestratorResult, setOrchestratorResult] = useState<OrchestratorResponse | null>(null);
+  const [orchestratorLoading, setOrchestratorLoading] = useState(false);
+
+  // Backend fetched states
+  const [navData, setNavData] = useState<NavigationResponse | null>(null);
+  const [crowdData, setCrowdData] = useState<CrowdResponse | null>(null);
+  const [emergencyData, setEmergencyData] = useState<EmergencyResponse | null>(null);
+  const [accessData, setAccessData] = useState<AccessibilityResponse | null>(null);
+
+  // Fetch initial mock metrics from backend on mount
+  useEffect(() => {
+    async function getInitialMetrics() {
+      try {
+        const [nav, crd, emg, acc] = await Promise.all([
+          callNavigation(),
+          callCrowd(),
+          callEmergency(),
+          callAccessibility()
+        ]);
+        setNavData(nav);
+        setCrowdData(crd);
+        setEmergencyData(emg);
+        setAccessData(acc);
+      } catch (error) {
+        console.error("Failed to load initial metrics from FastAPI server:", error);
+      }
+    }
+    getInitialMetrics();
+  }, []);
+
+  // Submit query to Orchestrator API
+  const handleOrchestrate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!query.trim()) return;
+
+    setOrchestratorLoading(true);
+    setOrchestratorResult(null);
+
+    try {
+      const response = await callOrchestrator(query);
+      setOrchestratorResult(response);
+
+      // Dynamically fetch and update the agent metric triggered by the orchestrator
+      if (response.selected_agents.includes('navigation')) {
+        const nav = await callNavigation(query);
+        setNavData(nav);
+      }
+      if (response.selected_agents.includes('crowd')) {
+        const crd = await callCrowd(query);
+        setCrowdData(crd);
+      }
+      if (response.selected_agents.includes('emergency')) {
+        const emg = await callEmergency(query);
+        setEmergencyData(emg);
+      }
+      if (response.selected_agents.includes('accessibility')) {
+        const acc = await callAccessibility(query);
+        setAccessData(acc);
+      }
+    } catch (error) {
+      console.error("Failed to route query through orchestrator:", error);
+    } finally {
+      setOrchestratorLoading(false);
+    }
+  };
+
   const stats = [
     {
       title: 'Crowd Status',
-      value: '64,120 / 70,000',
-      change: '+14.2%',
+      value: crowdData ? `${crowdData.zone} (${crowdData.crowd_level})` : '64,120 / 70,000',
+      change: crowdData ? 'LIVE BACKEND' : '+14.2%',
       changeType: 'increase' as const,
       icon: Users,
-      status: 'success' as const,
-      description: 'Stadium capacity at 91.6%'
+      status: crowdData?.crowd_level === 'High' ? 'danger' as const : 'success' as const,
+      description: crowdData ? `Forecast: ${crowdData.prediction}` : 'Stadium capacity at 91.6%'
     },
     {
       title: 'Active Incidents',
-      value: '2 Alerts',
-      change: '-60.0%',
+      value: emergencyData ? `${emergencyData.priority} Priority` : '2 Alerts',
+      change: emergencyData ? 'LIVE BACKEND' : '-60.0%',
       changeType: 'decrease' as const,
       icon: ShieldAlert,
       status: 'danger' as const,
-      description: '1 security, 1 facility incident'
+      description: emergencyData ? `Action: ${emergencyData.recommended_action} (ETA: ${emergencyData.eta})` : '1 security, 1 facility incident'
     },
     {
       title: 'AI Recommendations',
@@ -70,21 +154,21 @@ export default function DashboardPage() {
     },
     {
       title: 'Navigation Requests',
-      value: '1,450 / hr',
-      change: '+18.4%',
+      value: navData ? `${navData.gate} (${navData.walking_time})` : '1,450 / hr',
+      change: navData ? 'LIVE BACKEND' : '+18.4%',
       changeType: 'increase' as const,
       icon: Map,
       status: 'info' as const,
-      description: 'High traffic near North Exit'
+      description: navData ? `Transit: ${navData.status} | Crowd: ${navData.crowd}` : 'High traffic near North Exit'
     },
     {
       title: 'Accessibility Requests',
-      value: '18 Active',
-      change: '-12.5%',
+      value: accessData ? accessData.route : '18 Active',
+      change: accessData ? 'LIVE BACKEND' : '-12.5%',
       changeType: 'decrease' as const,
       icon: Accessibility,
       status: 'warning' as const,
-      description: '14 resolved in last hour'
+      description: accessData ? `Hazards: ${accessData.warnings.join(', ')}` : '14 resolved in last hour'
     }
   ];
 
@@ -195,7 +279,71 @@ export default function DashboardPage() {
         </div>
       </motion.div>
 
-      {/* Dashboard Quick Stats Carousel/List */}
+      {/* AI Orchestrator Console (New Section) */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.15 }}
+        className="rounded-3xl border border-zinc-800/80 bg-zinc-900/30 p-6 backdrop-blur-md space-y-4"
+      >
+        <div className="flex items-center gap-2 text-white">
+          <Terminal className="h-5 w-5 text-blue-400" />
+          <h2 className="text-base font-bold">AI Multi-Agent Orchestrator</h2>
+        </div>
+        <p className="text-xs text-zinc-450">
+          Input an operational command or enquiry. The Orchestrator will classify the intent and trigger the correct analytics agents.
+        </p>
+
+        <form onSubmit={handleOrchestrate} className="flex gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-3 h-4 w-4 text-zinc-500" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="e.g. Find wheelchair routings, check crowd capacity of east stand, safety status..."
+              className="w-full h-10 rounded-xl border border-zinc-800/90 bg-zinc-950/80 pl-10 pr-4 text-xs text-white placeholder-zinc-550 outline-none focus:border-blue-500/80 transition-all"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={orchestratorLoading}
+            className="flex items-center justify-center gap-1.5 h-10 px-5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition-all disabled:opacity-50 active:scale-95 duration-200"
+          >
+            {orchestratorLoading ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <>
+                <span>Orchestrate</span>
+                <Send className="h-3 w-3" />
+              </>
+            )}
+          </button>
+        </form>
+
+        {/* Display Orchestrator Results */}
+        {orchestratorResult && (
+          <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider font-mono">
+                Intent: {orchestratorResult.intent}
+              </span>
+              <div className="flex gap-1.5">
+                {orchestratorResult.selected_agents.map((agt) => (
+                  <span key={agt} className="rounded bg-blue-600/20 border border-blue-500/30 px-2 py-0.5 text-[10px] font-semibold text-blue-300 capitalize">
+                    {agt} agent
+                  </span>
+                ))}
+              </div>
+            </div>
+            <p className="text-xs text-zinc-300 font-medium leading-relaxed">
+              {orchestratorResult.message}
+            </p>
+          </div>
+        )}
+      </motion.div>
+
+      {/* Dashboard Quick Stats */}
       <motion.div
         variants={containerVariants}
         initial="hidden"

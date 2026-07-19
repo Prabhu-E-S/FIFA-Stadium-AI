@@ -1,19 +1,51 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import PageContainer from '@/components/common/page-container';
 import SectionHeader from '@/components/common/section-header';
 import DashboardCard from '@/components/common/dashboard-card';
 import StatCard from '@/components/common/stat-card';
 import StatusBadge from '@/components/common/status-badge';
-import { Accessibility, Compass, RotateCw, Shield, HelpCircle } from 'lucide-react';
+import { Accessibility, Compass, RotateCw, Shield, HelpCircle, Loader2 } from 'lucide-react';
+import { callAccessibility, AccessibilityResponse } from '@/lib/api';
 
 export default function AccessibilityPage() {
+    const [accessData, setAccessData] = useState<AccessibilityResponse | null>(null);
+    const [loading, setLoading] = useState(false);
+
     const requests = [
         { id: 'req-1', name: 'Wheelchair escort from Gate 8 to Block 120', time: '10 mins ago', status: 'dispatching' as const },
         { id: 'req-2', name: 'Sign Language interpreter request at Info Point 3', time: '18 mins ago', status: 'resolved' as const },
         { id: 'req-3', name: 'Elderly assistance cart request at South VIP Entrance', time: '30 mins ago', status: 'active' as const },
     ];
+
+    const fetchAccessibility = async () => {
+        setLoading(true);
+        try {
+            const data = await callAccessibility();
+            setAccessData(data);
+        } catch (e) {
+            console.error("Failed to query accessibility API:", e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchAccessibility();
+    }, []);
+
+    const displayedRequests = accessData
+        ? [
+            {
+                id: 'LIVE',
+                name: `Route Escort: ${accessData.route}`,
+                time: 'Just now',
+                status: 'active' as const
+            },
+            ...requests
+        ]
+        : requests;
 
     return (
         <PageContainer>
@@ -21,8 +53,16 @@ export default function AccessibilityPage() {
                 title="Accessibility Services"
                 description="Wheelchair assistance, adaptive seating tracking, and mobility carts routing."
                 actions={
-                    <button className="flex items-center gap-2 rounded-xl bg-zinc-900 border border-zinc-800 px-4 py-2 text-xs font-bold text-white hover:bg-zinc-800 transition-all active:scale-95 duration-200">
-                        <RotateCw className="h-3.5 w-3.5" />
+                    <button
+                        onClick={fetchAccessibility}
+                        disabled={loading}
+                        className="flex items-center gap-2 rounded-xl bg-zinc-900 border border-zinc-800 px-4 py-2 text-xs font-bold text-white hover:bg-zinc-800 transition-all active:scale-95 duration-200 disabled:opacity-50"
+                    >
+                        {loading ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                            <RotateCw className="h-3.5 w-3.5" />
+                        )}
                         <span>Refresh Assistance Queue</span>
                     </button>
                 }
@@ -32,12 +72,12 @@ export default function AccessibilityPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <StatCard
                     title="Active Requests"
-                    value="4 Pending"
-                    change="-20.5%"
-                    changeType="decrease"
+                    value={accessData ? accessData.route : "4 Pending"}
+                    change={accessData ? "LIVE BACKEND" : "-20.5%"}
+                    changeType={accessData ? "neutral" : "decrease"}
                     icon={Accessibility}
                     status="warning"
-                    description="Assistance requests awaiting driver/escort assignment"
+                    description={accessData ? `Warnings: ${accessData.warnings.join(', ')}` : "Assistance requests awaiting driver/escort assignment"}
                 />
                 <StatCard
                     title="Active Escort Carts"
@@ -69,7 +109,7 @@ export default function AccessibilityPage() {
                         icon={Accessibility}
                     >
                         <div className="space-y-4 mt-2">
-                            {requests.map((req) => (
+                            {displayedRequests.map((req) => (
                                 <div key={req.id} className="flex items-center justify-between border-b border-zinc-800/40 pb-3 last:border-0 last:pb-0">
                                     <div className="flex flex-col">
                                         <span className="text-sm font-semibold text-white">{req.name}</span>

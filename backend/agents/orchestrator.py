@@ -28,15 +28,7 @@ class OrchestratorAgent:
 
     def _get_fallback(self, query: str) -> Dict[str, Any]:
         query_lower = query.lower()
-        if "navigation" in query_lower or "route" in query_lower or "gate" in query_lower or "walk" in query_lower:
-            intent = "navigation"
-            selected_agents = ["navigation"]
-            message = "Fallback: Routing query matched with Navigation Agent."
-        elif "crowd" in query_lower or "capacity" in query_lower or "full" in query_lower or "attendance" in query_lower:
-            intent = "crowd"
-            selected_agents = ["crowd"]
-            message = "Fallback: Crowd density query matched with Crowd Agent."
-        elif "emergency" in query_lower or "help" in query_lower or "medical" in query_lower or "incident" in query_lower or "alert" in query_lower:
+        if "emergency" in query_lower or "help" in query_lower or "medical" in query_lower or "incident" in query_lower or "alert" in query_lower:
             intent = "emergency"
             selected_agents = ["emergency"]
             message = "Fallback: Incident notification matched with Emergency Agent."
@@ -44,6 +36,14 @@ class OrchestratorAgent:
             intent = "accessibility"
             selected_agents = ["accessibility"]
             message = "Fallback: Special mobility query matched with Accessibility Agent."
+        elif "crowd" in query_lower or "capacity" in query_lower or "full" in query_lower or "attendance" in query_lower:
+            intent = "crowd"
+            selected_agents = ["crowd"]
+            message = "Fallback: Crowd density query matched with Crowd Agent."
+        elif "navigation" in query_lower or "route" in query_lower or "gate" in query_lower or "walk" in query_lower:
+            intent = "navigation"
+            selected_agents = ["navigation"]
+            message = "Fallback: Routing query matched with Navigation Agent."
         else:
             intent = "navigation"
             selected_agents = ["navigation"]

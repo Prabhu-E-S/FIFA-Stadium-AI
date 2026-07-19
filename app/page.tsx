@@ -19,6 +19,7 @@ import {
 import Link from 'next/link';
 
 import PageContainer from '@/components/common/page-container';
+import ErrorBoundary from '@/components/common/error-boundary';
 
 // Reusable components
 import KPICard from '@/components/operations/kpi-card';
@@ -493,114 +494,116 @@ export default function DashboardPage() {
               <span>Interactive Stadium Map</span>
             </h3>
 
-            {/* Clickable Map Layout Placeholder */}
-            <div className="flex flex-col items-center">
-              <svg viewBox="0 0 320 220" className="w-full max-w-[280px] h-auto text-zinc-650" aria-label="Stadium Sectors outline map">
-                {/* Outer Boundary */}
-                <rect x="10" y="10" width="300" height="200" rx="30" fill="none" stroke="#27272a" strokeWidth="2" />
+            <ErrorBoundary fallbackTitle="Stadium Map Interactive Layout Offline">
+              {/* Clickable Map Layout Placeholder */}
+              <div className="flex flex-col items-center">
+                <svg viewBox="0 0 320 220" className="w-full max-w-[280px] h-auto text-zinc-650" aria-label="Stadium Sectors outline map">
+                  {/* Outer Boundary */}
+                  <rect x="10" y="10" width="300" height="200" rx="30" fill="none" stroke="#27272a" strokeWidth="2" />
 
-                {/* Pitch Area */}
-                <rect x="110" y="70" width="100" height="80" rx="5" fill="#18181b" stroke="#3f3f46" strokeWidth="1.5" />
-                {/* Center circle */}
-                <circle cx="160" cy="110" r="16" fill="none" stroke="#3f3f46" strokeWidth="1.5" />
+                  {/* Pitch Area */}
+                  <rect x="110" y="70" width="100" height="80" rx="5" fill="#18181b" stroke="#3f3f46" strokeWidth="1.5" />
+                  {/* Center circle */}
+                  <circle cx="160" cy="110" r="16" fill="none" stroke="#3f3f46" strokeWidth="1.5" />
 
-                {/* Stands clickable polygon paths */}
-                {/* North Stand */}
-                <polygon
-                  points="20,20 300,20 250,55 70,55"
-                  fill={selectedZone?.name === 'North Stand' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(9, 9, 11, 0.5)'}
-                  stroke={selectedZone?.name === 'North Stand' ? '#3b82f6' : '#27272a'}
-                  strokeWidth="2"
-                  className="cursor-pointer hover:fill-blue-500/10 transition-all focus:outline-none"
-                  onClick={() => setSelectedZone(zones[0])}
-                  tabIndex={0}
-                  aria-label="North Stand"
-                />
+                  {/* Stands clickable polygon paths */}
+                  {/* North Stand */}
+                  <polygon
+                    points="20,20 300,20 250,55 70,55"
+                    fill={selectedZone?.name === 'North Stand' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(9, 9, 11, 0.5)'}
+                    stroke={selectedZone?.name === 'North Stand' ? '#3b82f6' : '#27272a'}
+                    strokeWidth="2"
+                    className="cursor-pointer hover:fill-blue-500/10 transition-all focus:outline-none"
+                    onClick={() => setSelectedZone(zones[0])}
+                    tabIndex={0}
+                    aria-label="North Stand"
+                  />
 
-                {/* East Stand */}
-                <polygon
-                  points="300,20 300,200 255,160 255,60"
-                  fill={selectedZone?.name === 'East Stand' ? 'rgba(239, 68, 68, 0.25)' : 'rgba(9, 9, 11, 0.5)'}
-                  stroke={selectedZone?.name === 'East Stand' ? '#ef4444' : '#27272a'}
-                  strokeWidth="2"
-                  className="cursor-pointer hover:fill-red-500/10 transition-all focus:outline-none"
-                  onClick={() => setSelectedZone(zones[2])}
-                  tabIndex={0}
-                  aria-label="East Stand"
-                />
+                  {/* East Stand */}
+                  <polygon
+                    points="300,20 300,200 255,160 255,60"
+                    fill={selectedZone?.name === 'East Stand' ? 'rgba(239, 68, 68, 0.25)' : 'rgba(9, 9, 11, 0.5)'}
+                    stroke={selectedZone?.name === 'East Stand' ? '#ef4444' : '#27272a'}
+                    strokeWidth="2"
+                    className="cursor-pointer hover:fill-red-500/10 transition-all focus:outline-none"
+                    onClick={() => setSelectedZone(zones[2])}
+                    tabIndex={0}
+                    aria-label="East Stand"
+                  />
 
-                {/* South Stand */}
-                <polygon
-                  points="20,200 300,200 250,165 70,165"
-                  fill={selectedZone?.name === 'South Stand' ? 'rgba(234, 179, 8, 0.2)' : 'rgba(9, 9, 11, 0.5)'}
-                  stroke={selectedZone?.name === 'South Stand' ? '#eab308' : '#27272a'}
-                  strokeWidth="2"
-                  className="cursor-pointer hover:fill-yellow-500/10 transition-all focus:outline-none"
-                  onClick={() => setSelectedZone(zones[1])}
-                  tabIndex={0}
-                  aria-label="South Stand"
-                />
+                  {/* South Stand */}
+                  <polygon
+                    points="20,200 300,200 250,165 70,165"
+                    fill={selectedZone?.name === 'South Stand' ? 'rgba(234, 179, 8, 0.2)' : 'rgba(9, 9, 11, 0.5)'}
+                    stroke={selectedZone?.name === 'South Stand' ? '#eab308' : '#27272a'}
+                    strokeWidth="2"
+                    className="cursor-pointer hover:fill-yellow-500/10 transition-all focus:outline-none"
+                    onClick={() => setSelectedZone(zones[1])}
+                    tabIndex={0}
+                    aria-label="South Stand"
+                  />
 
-                {/* West Stand */}
-                <polygon
-                  points="20,20 20,200 65,160 65,60"
-                  fill={selectedZone?.name === 'West Stand' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(9, 9, 11, 0.5)'}
-                  stroke={selectedZone?.name === 'West Stand' ? '#3b82f6' : '#27272a'}
-                  strokeWidth="2"
-                  className="cursor-pointer hover:fill-blue-500/10 transition-all focus:outline-none"
-                  onClick={() => setSelectedZone(zones[3])}
-                  tabIndex={0}
-                  aria-label="West Stand"
-                />
-              </svg>
-            </div>
+                  {/* West Stand */}
+                  <polygon
+                    points="20,20 20,200 65,160 65,60"
+                    fill={selectedZone?.name === 'West Stand' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(9, 9, 11, 0.5)'}
+                    stroke={selectedZone?.name === 'West Stand' ? '#3b82f6' : '#27272a'}
+                    strokeWidth="2"
+                    className="cursor-pointer hover:fill-blue-500/10 transition-all focus:outline-none"
+                    onClick={() => setSelectedZone(zones[3])}
+                    tabIndex={0}
+                    aria-label="West Stand"
+                  />
+                </svg>
+              </div>
 
-            <AnimatePresence mode="wait">
-              {selectedZone && (
-                <motion.div
-                  key={selectedZone.name}
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="border border-zinc-800 bg-zinc-950/60 p-4 rounded-2xl space-y-3"
-                >
-                  <div className="flex justify-between items-center pb-2 border-b border-zinc-900/60">
-                    <span className="text-xs font-bold text-white">{selectedZone.name} Details</span>
-                    <span className={`inline-flex px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${selectedZone.color === 'red' ? 'bg-red-500/10 text-red-550 border border-red-500/20' :
-                      selectedZone.color === 'yellow' ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20' :
-                        'bg-emerald-500/10 text-emerald-450 border border-emerald-500/20'
-                      }`}>
-                      {selectedZone.crowdLevel}
-                    </span>
-                  </div>
+              <AnimatePresence mode="wait">
+                {selectedZone && (
+                  <motion.div
+                    key={selectedZone.name}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="border border-zinc-800 bg-zinc-950/60 p-4 rounded-2xl space-y-3"
+                  >
+                    <div className="flex justify-between items-center pb-2 border-b border-zinc-900/60">
+                      <span className="text-xs font-bold text-white">{selectedZone.name} Details</span>
+                      <span className={`inline-flex px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${selectedZone.color === 'red' ? 'bg-red-500/10 text-red-550 border border-red-500/20' :
+                        selectedZone.color === 'yellow' ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20' :
+                          'bg-emerald-500/10 text-emerald-450 border border-emerald-500/20'
+                        }`}>
+                        {selectedZone.crowdLevel}
+                      </span>
+                    </div>
 
-                  <div className="space-y-2">
-                    <AnimatedProgressBar value={selectedZone.occupancy} label="Stand Density Capacity" theme={selectedZone.color === 'red' ? 'red' : selectedZone.color === 'yellow' ? 'yellow' : 'emerald'} />
+                    <div className="space-y-2">
+                      <AnimatedProgressBar value={selectedZone.occupancy} label="Stand Density Capacity" theme={selectedZone.color === 'red' ? 'red' : selectedZone.color === 'yellow' ? 'yellow' : 'emerald'} />
 
-                    <div className="grid grid-cols-2 gap-2 text-[10px] font-semibold text-zinc-500 font-mono pt-1">
-                      <div>
-                        <span>RISK: </span>
-                        <span className={`font-bold ${selectedZone.color === 'red' ? 'text-red-500' : 'text-zinc-350'}`}>{selectedZone.riskLevel}</span>
+                      <div className="grid grid-cols-2 gap-2 text-[10px] font-semibold text-zinc-500 font-mono pt-1">
+                        <div>
+                          <span>RISK: </span>
+                          <span className={`font-bold ${selectedZone.color === 'red' ? 'text-red-500' : 'text-zinc-350'}`}>{selectedZone.riskLevel}</span>
+                        </div>
+                        <div className="justify-self-end">
+                          <span>INCIDENTS: </span>
+                          <span className="text-zinc-350">{selectedZone.incidents} active</span>
+                        </div>
                       </div>
-                      <div className="justify-self-end">
-                        <span>INCIDENTS: </span>
-                        <span className="text-zinc-350">{selectedZone.incidents} active</span>
+
+                      <div className="text-[10px] text-zinc-400 bg-zinc-950/80 p-2.5 rounded-lg border border-zinc-900 leading-relaxed">
+                        <span className="font-bold text-zinc-350">Status: </span>
+                        {selectedZone.status}
+                      </div>
+
+                      <div className="text-[10px] text-emerald-400 bg-emerald-500/[0.02] p-2.5 rounded-lg border border-emerald-500/15 leading-relaxed font-bold">
+                        <span className="font-bold text-emerald-500 uppercase tracking-widest text-[8px] block mb-0.5 font-mono">Directive recommendation</span>
+                        {selectedZone.recommendation}
                       </div>
                     </div>
-
-                    <div className="text-[10px] text-zinc-400 bg-zinc-950/80 p-2.5 rounded-lg border border-zinc-900 leading-relaxed">
-                      <span className="font-bold text-zinc-350">Status: </span>
-                      {selectedZone.status}
-                    </div>
-
-                    <div className="text-[10px] text-emerald-400 bg-emerald-500/[0.02] p-2.5 rounded-lg border border-emerald-500/15 leading-relaxed font-bold">
-                      <span className="font-bold text-emerald-500 uppercase tracking-widest text-[8px] block mb-0.5 font-mono">Directive recommendation</span>
-                      {selectedZone.recommendation}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </ErrorBoundary>
           </div>
         </div>
       </div>

@@ -26,6 +26,7 @@ import {
 import PageContainer from '@/components/common/page-container';
 import SectionHeader from '@/components/common/section-header';
 import AnalyticsCard from '@/components/operations/analytics-card';
+import ErrorBoundary from '@/components/common/error-boundary';
 
 export default function AnalyticsPage() {
     const [isMounted, setIsMounted] = useState(false);
@@ -85,107 +86,115 @@ export default function AnalyticsPage() {
                 {/* Chart 1: Crowd Trend (LineChart) */}
                 <div className="h-full">
                     <AnalyticsCard title="Crowd Velocity & Capacity Forecast" description="Actual vs predicted seating capacity counts." icon={TrendingUp}>
-                        {isMounted ? (
-                            <ResponsiveContainer width="100%" height={230}>
-                                <LineChart data={crowdTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-                                    <XAxis dataKey="time" stroke="#71717a" fontSize={10} className="font-mono" />
-                                    <YAxis stroke="#71717a" fontSize={10} className="font-mono" />
-                                    <Tooltip contentStyle={{ background: '#09090b', borderColor: '#27272a', borderRadius: '12px', fontSize: '11px' }} />
-                                    <Line type="monotone" dataKey="current" name="Occupancy" stroke="#3b82f6" strokeWidth={2.5} activeDot={{ r: 6 }} />
-                                    <Line type="monotone" dataKey="forecast" name="Forecast Model" stroke="#71717a" strokeWidth={1.5} strokeDasharray="5 5" />
-                                </LineChart>
-                            </ResponsiveContainer>
-                        ) : null}
+                        <ErrorBoundary fallbackTitle="Crowd Velocity Graph Offline">
+                            {isMounted ? (
+                                <ResponsiveContainer width="100%" height={230}>
+                                    <LineChart data={crowdTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+                                        <XAxis dataKey="time" stroke="#71717a" fontSize={10} className="font-mono" />
+                                        <YAxis stroke="#71717a" fontSize={10} className="font-mono" />
+                                        <Tooltip contentStyle={{ background: '#09090b', borderColor: '#27272a', borderRadius: '12px', fontSize: '11px' }} />
+                                        <Line type="monotone" dataKey="current" name="Occupancy" stroke="#3b82f6" strokeWidth={2.5} activeDot={{ r: 6 }} />
+                                        <Line type="monotone" dataKey="forecast" name="Forecast Model" stroke="#71717a" strokeWidth={1.5} strokeDasharray="5 5" />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            ) : null}
+                        </ErrorBoundary>
                     </AnalyticsCard>
                 </div>
 
                 {/* Chart 2: Incident Trends (BarChart) */}
                 <div className="h-full">
                     <AnalyticsCard title="Active vs Resolved Sector Incidents" description="Breakdown of support tickets across sectors." icon={BarChart3}>
-                        {isMounted ? (
-                            <ResponsiveContainer width="100%" height={230}>
-                                <BarChart data={incidentData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-                                    <XAxis dataKey="name" stroke="#71717a" fontSize={9} />
-                                    <YAxis stroke="#71717a" fontSize={10} />
-                                    <Tooltip contentStyle={{ background: '#09090b', borderColor: '#27272a', borderRadius: '12px', fontSize: '11px' }} />
-                                    <Bar dataKey="resolved" name="Resolved Tasks" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={30} />
-                                    <Bar dataKey="active" name="Active Warnings" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={30} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        ) : null}
+                        <ErrorBoundary fallbackTitle="Sector Incidents Graph Offline">
+                            {isMounted ? (
+                                <ResponsiveContainer width="100%" height={230}>
+                                    <BarChart data={incidentData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+                                        <XAxis dataKey="name" stroke="#71717a" fontSize={9} />
+                                        <YAxis stroke="#71717a" fontSize={10} />
+                                        <Tooltip contentStyle={{ background: '#09090b', borderColor: '#27272a', borderRadius: '12px', fontSize: '11px' }} />
+                                        <Bar dataKey="resolved" name="Resolved Tasks" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={30} />
+                                        <Bar dataKey="active" name="Active Warnings" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={30} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            ) : null}
+                        </ErrorBoundary>
                     </AnalyticsCard>
                 </div>
 
                 {/* Chart 3: Requests Trend (AreaChart) */}
                 <div className="h-full">
                     <AnalyticsCard title="Operational Queries & Mobility Calls" description="Timeline frequency of transit and accessibility helper calls." icon={Users}>
-                        {isMounted ? (
-                            <ResponsiveContainer width="100%" height={230}>
-                                <AreaChart data={requestTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                    <defs>
-                                        <linearGradient id="colorNav" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
-                                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                                        </linearGradient>
-                                        <linearGradient id="colorAccess" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#eab308" stopOpacity={0.2} />
-                                            <stop offset="95%" stopColor="#eab308" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-                                    <XAxis dataKey="time" stroke="#71717a" fontSize={10} />
-                                    <YAxis yAxisId="left" stroke="#3b82f6" fontSize={10} />
-                                    <YAxis yAxisId="right" orientation="right" stroke="#eab308" fontSize={10} />
-                                    <Tooltip contentStyle={{ background: '#09090b', borderColor: '#27272a', borderRadius: '12px', fontSize: '11px' }} />
-                                    <Area yAxisId="left" type="monotone" dataKey="nav" name="Nav Reroutes" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorNav)" />
-                                    <Area yAxisId="right" type="monotone" dataKey="access" name="Access Assistance" stroke="#eab308" strokeWidth={2} fillOpacity={1} fill="url(#colorAccess)" />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        ) : null}
+                        <ErrorBoundary fallbackTitle="Mobility Logs Offline">
+                            {isMounted ? (
+                                <ResponsiveContainer width="100%" height={230}>
+                                    <AreaChart data={requestTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                        <defs>
+                                            <linearGradient id="colorNav" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
+                                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                            </linearGradient>
+                                            <linearGradient id="colorAccess" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#eab308" stopOpacity={0.2} />
+                                                <stop offset="95%" stopColor="#eab308" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+                                        <XAxis dataKey="time" stroke="#71717a" fontSize={10} />
+                                        <YAxis yAxisId="left" stroke="#3b82f6" fontSize={10} />
+                                        <YAxis yAxisId="right" orientation="right" stroke="#eab308" fontSize={10} />
+                                        <Tooltip contentStyle={{ background: '#09090b', borderColor: '#27272a', borderRadius: '12px', fontSize: '11px' }} />
+                                        <Area yAxisId="left" type="monotone" dataKey="nav" name="Nav Reroutes" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorNav)" />
+                                        <Area yAxisId="right" type="monotone" dataKey="access" name="Access Assistance" stroke="#eab308" strokeWidth={2} fillOpacity={1} fill="url(#colorAccess)" />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            ) : null}
+                        </ErrorBoundary>
                     </AnalyticsCard>
                 </div>
 
                 {/* Chart 4: Priority Distribution (PieChart) */}
                 <div className="h-full">
                     <AnalyticsCard title="Incident Priority Distribution Ratio" description="Classification ratio of incoming warning calls." icon={PieIcon}>
-                        {isMounted ? (
-                            <div className="flex flex-col sm:flex-row items-center justify-around h-full gap-4">
-                                <div className="w-[180px] h-[180px] shrink-0">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                            <Pie
-                                                data={priorityDist}
-                                                cx="50%"
-                                                cy="50%"
-                                                innerRadius={50}
-                                                outerRadius={75}
-                                                paddingAngle={5}
-                                                dataKey="value"
-                                            >
-                                                {priorityDist.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                                ))}
-                                            </Pie>
-                                            <Tooltip contentStyle={{ background: '#09090b', borderColor: '#27272a', borderRadius: '12px', fontSize: '11px' }} />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                </div>
+                        <ErrorBoundary fallbackTitle="Priority Pie Metrics Offline">
+                            {isMounted ? (
+                                <div className="flex flex-col sm:flex-row items-center justify-around h-full gap-4">
+                                    <div className="w-[180px] h-[180px] shrink-0">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <PieChart>
+                                                <Pie
+                                                    data={priorityDist}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    innerRadius={50}
+                                                    outerRadius={75}
+                                                    paddingAngle={5}
+                                                    dataKey="value"
+                                                >
+                                                    {priorityDist.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip contentStyle={{ background: '#09090b', borderColor: '#27272a', borderRadius: '12px', fontSize: '11px' }} />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    </div>
 
-                                <div className="space-y-2 w-full font-semibold text-xs">
-                                    {priorityDist.map((item) => (
-                                        <div key={item.name} className="flex justify-between items-center bg-zinc-950/45 p-2 rounded-lg border border-zinc-900">
-                                            <div className="flex items-center gap-2">
-                                                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                                                <span className="text-zinc-350">{item.name}</span>
+                                    <div className="space-y-2 w-full font-semibold text-xs">
+                                        {priorityDist.map((item) => (
+                                            <div key={item.name} className="flex justify-between items-center bg-zinc-950/45 p-2 rounded-lg border border-zinc-900">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                                                    <span className="text-zinc-350">{item.name}</span>
+                                                </div>
+                                                <span className="text-white font-bold font-mono">{item.value} tasks</span>
                                             </div>
-                                            <span className="text-white font-bold font-mono">{item.value} tasks</span>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        ) : null}
+                            ) : null}
+                        </ErrorBoundary>
                     </AnalyticsCard>
                 </div>
 

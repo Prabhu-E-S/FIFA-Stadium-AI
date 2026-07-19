@@ -1,96 +1,217 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion, Variants } from 'framer-motion';
+import { motion, Variants, AnimatePresence } from 'framer-motion';
 import {
   Users,
   ShieldAlert,
   BrainCircuit,
   Map,
   Accessibility,
-  Calendar,
-  MapPin,
   Activity,
-  ChevronRight,
-  AlertOctagon,
-  Sparkles,
-  Search,
   Terminal,
   Send,
   Loader2,
-  GitBranch
+  Search,
+  Sparkles,
+  Smartphone
 } from 'lucide-react';
 import Link from 'next/link';
 
 import PageContainer from '@/components/common/page-container';
-import StatCard from '@/components/common/stat-card';
-import AlertCard from '@/components/common/alert-card';
-import TimelineCard from '@/components/common/timeline-card';
-import StatusBadge from '@/components/common/status-badge';
+
+// Reusable components
+import KPICard from '@/components/operations/kpi-card';
+import ZoneCard, { ZoneColor } from '@/components/operations/zone-card';
+import AIRecommendationCard from '@/components/operations/ai-recommendation-card';
+import AgentExecutionCard from '@/components/operations/agent-execution-card';
+import AnimatedProgressBar from '@/components/operations/animated-progress-bar';
 
 import {
   callOrchestrator,
-  callNavigation,
-  callCrowd,
-  callEmergency,
-  callAccessibility,
-  OrchestratorResponse,
-  NavigationResponse,
-  CrowdResponse,
-  EmergencyResponse,
-  AccessibilityResponse
+  OrchestratorResponse
 } from '@/lib/api';
 
-// Container Variants for stagger animation
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.08
+      staggerChildren: 0.05
     }
   }
 };
 
 const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 15 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' as const } }
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } }
 };
 
+interface ZoneData {
+  name: string;
+  crowdLevel: string;
+  riskLevel: string;
+  status: string;
+  color: ZoneColor;
+  occupancy: number; // percentage
+  incidents: number;
+  recommendation: string;
+}
+
 export default function DashboardPage() {
-  // AI Orchestrator Console state
+  // AI Orchestrator state
   const [query, setQuery] = useState('');
   const [orchestratorResult, setOrchestratorResult] = useState<OrchestratorResponse | null>(null);
   const [orchestratorLoading, setOrchestratorLoading] = useState(false);
+  const [queryTimestamp, setQueryTimestamp] = useState<string>('');
 
-  // Backend fetched states
-  const [navData, setNavData] = useState<NavigationResponse | null>(null);
-  const [crowdData, setCrowdData] = useState<CrowdResponse | null>(null);
-  const [emergencyData, setEmergencyData] = useState<EmergencyResponse | null>(null);
-  const [accessData, setAccessData] = useState<AccessibilityResponse | null>(null);
+  // Simulated live KPIs state
+  const [crowdCount, setCrowdCount] = useState(64120);
+  const [activeIncidents, setActiveIncidents] = useState(2);
+  const [navRequests, setNavRequests] = useState(1450);
+  const [accessRequests, setAccessRequests] = useState(18);
+  const [aiConfidence, setAiConfidence] = useState(94);
+  const [overallHealth, setOverallHealth] = useState(96);
 
-  // Fetch initial mock metrics from backend on mount
-  useEffect(() => {
-    async function getInitialMetrics() {
-      try {
-        const [nav, crd, emg, acc] = await Promise.all([
-          callNavigation(),
-          callCrowd(),
-          callEmergency(),
-          callAccessibility()
-        ]);
-        setNavData(nav);
-        setCrowdData(crd);
-        setEmergencyData(emg);
-        setAccessData(acc);
-      } catch (error) {
-        console.error("Failed to load initial metrics from FastAPI server:", error);
-      }
+  // Stadium Zone Cards state
+  const [zones, setZones] = useState<ZoneData[]>([
+    {
+      name: 'North Stand',
+      crowdLevel: 'Moderate',
+      riskLevel: 'Low',
+      status: 'Normal entry flow at gates.',
+      color: 'green',
+      occupancy: 65,
+      incidents: 0,
+      recommendation: 'Main entrance operation nominal.'
+    },
+    {
+      name: 'South Stand',
+      crowdLevel: 'Heavy',
+      riskLevel: 'Medium',
+      status: 'Food court area congestion.',
+      color: 'yellow',
+      occupancy: 88,
+      incidents: 1,
+      recommendation: 'Open concession sector bypass lanes.'
+    },
+    {
+      name: 'East Stand',
+      crowdLevel: 'Critical',
+      riskLevel: 'High',
+      status: 'Concourse gate congestion.',
+      color: 'red',
+      occupancy: 94,
+      incidents: 1,
+      recommendation: 'Reroute incoming arrivals to West Entrance.'
+    },
+    {
+      name: 'West Stand',
+      crowdLevel: 'Moderate',
+      riskLevel: 'Low',
+      status: 'Flow rate steady.',
+      color: 'green',
+      occupancy: 58,
+      incidents: 0,
+      recommendation: 'West sectors ready for spillover traffic.'
+    },
+    {
+      name: 'VIP',
+      crowdLevel: 'Low',
+      riskLevel: 'Low',
+      status: 'Secure access checks active.',
+      color: 'green',
+      occupancy: 42,
+      incidents: 0,
+      recommendation: 'Lounge pathways clean. Escalators nominal.'
+    },
+    {
+      name: 'Parking',
+      crowdLevel: 'Heavy',
+      riskLevel: 'Low',
+      status: 'Zone B lot near capacity.',
+      color: 'yellow',
+      occupancy: 82,
+      incidents: 0,
+      recommendation: 'Redirect incoming vehicles to North overflow Lot C.'
+    },
+    {
+      name: 'Fan Zone',
+      crowdLevel: 'Heavy',
+      riskLevel: 'Medium',
+      status: 'Live screen gathering at limit.',
+      color: 'orange',
+      occupancy: 85,
+      incidents: 0,
+      recommendation: 'Deploy crowd control barriers at Sector 3 boundary.'
     }
-    getInitialMetrics();
-  }, []);
+  ]);
 
-  // Submit query to Orchestrator API
+  const [selectedZone, setSelectedZone] = useState<ZoneData | null>(zones[2]); // East Stand initially
+
+  // 10 second light simulation interval
+  useEffect(() => {
+    const timer = setInterval(() => {
+      // Fluctuate crowd count slightly (+- 150)
+      setCrowdCount(prev => {
+        const delta = Math.floor(Math.random() * 300) - 150;
+        const target = prev + delta;
+        return Math.max(50000, Math.min(70000, target));
+      });
+
+      // Navigation requests fluctuation
+      setNavRequests(prev => prev + Math.floor(Math.random() * 21) - 10);
+
+      // Accessibility requests fluctuation
+      setAccessRequests(prev => Math.max(5, Math.min(25, prev + Math.floor(Math.random() * 3) - 1)));
+
+      // AI Confidence fluctuation (+- 2)
+      setAiConfidence(prev => Math.max(85, Math.min(99, prev + Math.floor(Math.random() * 5) - 2)));
+
+      // Overall health fluctuation
+      setOverallHealth(prev => Math.max(90, Math.min(100, prev + Math.floor(Math.random() * 3) - 1)));
+
+      // Randomly update zone occupancies and status
+      setZones(prevZones => {
+        const nextZones = prevZones.map(zone => {
+          const occupancyDelta = Math.floor(Math.random() * 5) - 2;
+          const nextOccupancy = Math.max(30, Math.min(99, zone.occupancy + occupancyDelta));
+
+          let color: ZoneColor = 'green';
+          let crowdLevel = 'Moderate';
+          if (nextOccupancy >= 90) {
+            color = 'red';
+            crowdLevel = 'Critical';
+          } else if (nextOccupancy >= 80) {
+            color = 'orange';
+            crowdLevel = 'Heavy';
+          } else if (nextOccupancy >= 68) {
+            color = 'yellow';
+            crowdLevel = 'Heavy';
+          }
+
+          return {
+            ...zone,
+            occupancy: nextOccupancy,
+            color,
+            crowdLevel
+          };
+        });
+
+        // Sync selected zone info
+        if (selectedZone) {
+          const updatedSelected = nextZones.find(z => z.name === selectedZone.name);
+          if (updatedSelected) {
+            setSelectedZone(updatedSelected);
+          }
+        }
+        return nextZones;
+      });
+    }, 10000);
+
+    return () => clearInterval(timer);
+  }, [selectedZone]);
+
   const handleOrchestrate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
@@ -98,458 +219,415 @@ export default function DashboardPage() {
     setOrchestratorLoading(true);
     setOrchestratorResult(null);
 
+    const now = new Date();
+    setQueryTimestamp(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`);
+
     try {
       const response = await callOrchestrator(query);
       setOrchestratorResult(response);
 
-      // Dynamically fetch and update the local agent metrics triggered by the orchestrator
-      if (response.selected_agents.includes('navigation')) {
-        const nav = await callNavigation(query);
-        setNavData(nav);
-      }
+      // Dynamic metrics updates based on AI intent response
       if (response.selected_agents.includes('crowd')) {
-        const crd = await callCrowd(query);
-        setCrowdData(crd);
+        setCrowdCount(prev => prev + 1000);
       }
       if (response.selected_agents.includes('emergency')) {
-        const emg = await callEmergency(query);
-        setEmergencyData(emg);
-      }
-      if (response.selected_agents.includes('accessibility')) {
-        const acc = await callAccessibility(query);
-        setAccessData(acc);
+        setActiveIncidents(prev => prev + 1);
       }
     } catch (error) {
-      console.error("Failed to route query through orchestrator:", error);
+      console.error(error);
     } finally {
       setOrchestratorLoading(false);
     }
   };
 
-  const stats = [
-    {
-      title: 'Crowd Status',
-      value: crowdData ? `${crowdData.zone} (${crowdData.crowd_level})` : '64,120 / 70,000',
-      change: crowdData ? 'LIVE BACKEND' : '+14.2%',
-      changeType: 'increase' as const,
-      icon: Users,
-      status: crowdData?.crowd_level === 'High' ? 'danger' as const : 'success' as const,
-      description: crowdData ? `Forecast: ${crowdData.prediction}` : 'Stadium capacity at 91.6%'
-    },
-    {
-      title: 'Active Incidents',
-      value: emergencyData ? `${emergencyData.priority} Priority` : '2 Alerts',
-      change: emergencyData ? 'LIVE BACKEND' : '-60.0%',
-      changeType: 'decrease' as const,
-      icon: ShieldAlert,
-      status: 'danger' as const,
-      description: emergencyData ? `Action: ${emergencyData.recommended_action} (ETA: ${emergencyData.eta})` : '1 security, 1 facility incident'
-    },
-    {
-      title: 'AI Recommendations',
-      value: '6 Optimal',
-      change: '+2 new',
-      changeType: 'increase' as const,
-      icon: BrainCircuit,
-      status: 'info' as const,
-      description: 'Crowd flow and logistics suggestions'
-    },
-    {
-      title: 'Navigation Requests',
-      value: navData ? `${navData.gate} (${navData.walking_time})` : '1,450 / hr',
-      change: navData ? 'LIVE BACKEND' : '+18.4%',
-      changeType: 'increase' as const,
-      icon: Map,
-      status: 'info' as const,
-      description: navData ? `Transit: ${navData.status} | Crowd: ${navData.crowd}` : 'High traffic near North Exit'
-    },
-    {
-      title: 'Accessibility Requests',
-      value: accessData ? accessData.route : '18 Active',
-      change: accessData ? 'LIVE BACKEND' : '-12.5%',
-      changeType: 'decrease' as const,
-      icon: Accessibility,
-      status: 'warning' as const,
-      description: accessData ? `Hazards: ${accessData.warnings.join(', ')}` : '14 resolved in last hour'
-    }
-  ];
-
-  const recentAlerts = [
-    {
-      id: 'alt-1',
-      title: 'North Entrance Crowd Congestion',
-      description: 'Crowd flow rate exceeding threshold. Recommending activation of bypass gate 2B and redirecting route B users.',
-      timestamp: '5 min ago',
-      severity: 'warning' as const,
-      location: 'Gate 2A & 2B, North Concourse',
-      status: 'active' as const
-    },
-    {
-      id: 'alt-2',
-      title: 'Elevator E-4 Offline (Power Trip)',
-      description: 'Facility elevator E-4 serving wheelchair Section 304 reported offline. Accessibility cart dispatched to assist visitors.',
-      timestamp: '18 min ago',
-      severity: 'error' as const,
-      location: 'Level 2, Section 304',
-      status: 'active' as const
-    },
-    {
-      id: 'alt-3',
-      title: 'Medical Assistance Requested',
-      description: 'Heat exhaustion report at Row 14, Seat 22. Medical response team alpha has reached and is administering first aid.',
-      timestamp: '42 min ago',
-      severity: 'success' as const,
-      location: 'Sector 5, Lower Tier',
-      status: 'resolved' as const
-    }
-  ];
-
-  const timelineEvents = [
-    {
-      id: 'evt-1',
-      time: '10:35 AM',
-      title: 'Roof Closure Sequence Initiated',
-      description: 'AI detected incoming light rain front. Retractable roof closing cycle will complete in 8 minutes.',
-      category: 'weather' as const,
-      status: 'ongoing' as const
-    },
-    {
-      id: 'evt-2',
-      time: '10:14 AM',
-      title: 'Sector 3 Access Gates Congestion Cleared',
-      description: 'Additional biometric scanning lanes opened to accelerate entry flow. Delay returned to normal (<2 mins).',
-      category: 'crowd' as const,
-      status: 'resolved' as const
-    },
-    {
-      id: 'evt-3',
-      time: '09:55 AM',
-      title: 'Biometric Access Integration Check',
-      description: 'Quarterly system checks verified normal performance across all 120 ticketing checkpoints.',
-      category: 'system' as const,
-      status: 'resolved' as const
-    },
-    {
-      id: 'evt-4',
-      time: '09:30 AM',
-      title: 'Accessibility Cart Dispatched (Cart #4)',
-      description: 'Dispatched to Gate 8 to transport an elderly visitor matching mobility assistance parameters.',
-      category: 'access' as const,
-      status: 'resolved' as const
-    }
-  ];
-
   return (
     <PageContainer>
-      {/* Hero Section */}
+      {/* Top Welcome Action Bar */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="relative overflow-hidden rounded-3xl border border-zinc-800/80 bg-zinc-900/10 p-8 md:p-10 backdrop-blur-md"
+        className="flex flex-col md:flex-row md:items-center justify-between gap-4 border border-zinc-800/80 bg-zinc-900/10 p-6 rounded-3xl backdrop-blur-md relative overflow-hidden"
       >
-        {/* Glow Effects */}
-        <div className="absolute -top-12 -right-12 h-64 w-64 rounded-full bg-blue-600/10 blur-[80px]" />
-        <div className="absolute -bottom-12 -left-12 h-64 w-64 rounded-full bg-emerald-600/5 blur-[80px]" />
-
-        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          <div className="space-y-3">
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-400">
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>Stadium Intelligence Core</span>
-            </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-white md:text-4xl bg-gradient-to-r from-white via-white to-zinc-400 bg-clip-text text-transparent">
-              StadiumBrain AI
-            </h1>
-            <p className="text-zinc-400 text-sm max-w-xl md:text-base leading-relaxed">
-              An AI-powered stadium intelligence platform for the FIFA World Cup 2026. Monitor crowding, manage incidents, optimize routing, and assist accessibility requirements in real-time.
-            </p>
+        <div className="absolute top-0 right-0 h-40 w-40 rounded-full bg-blue-500/5 blur-3xl pointer-events-none" />
+        <div className="space-y-1">
+          <div className="flex items-center gap-1.5 text-xs text-blue-400 font-bold font-mono">
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>FIFA WORLD CUP COMMAND CENTRE</span>
           </div>
-
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex flex-col border border-zinc-800/85 bg-zinc-900/60 p-4 rounded-2xl min-w-[130px]">
-              <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">CROWD STATUS</span>
-              <span className="text-lg font-bold text-white mt-1">SECURE</span>
-              <span className="text-[10px] text-emerald-400 font-bold mt-0.5">NORMAL FLOW</span>
-            </div>
-            <div className="flex flex-col border border-zinc-800/85 bg-zinc-900/60 p-4 rounded-2xl min-w-[130px]">
-              <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">INCIDENTS</span>
-              <span className="text-lg font-bold text-white mt-1">2 PLANNED</span>
-              <span className="text-[10px] text-yellow-500 font-bold mt-0.5">0 CRITICAL</span>
-            </div>
-          </div>
+          <h1 className="text-2xl font-extrabold text-white tracking-tight">MetLife Operations Dashboard</h1>
+          <p className="text-xs text-zinc-450">Real-time telemetry, spatial sector occupancy metrics, and AI multi-agent recommendation engine.</p>
         </div>
-      </motion.div>
 
-      {/* AI Orchestrator Console */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.15 }}
-        className="rounded-3xl border border-zinc-800/80 bg-zinc-900/30 p-6 backdrop-blur-md space-y-4"
-      >
-        <div className="flex items-center justify-between text-white">
-          <div className="flex items-center gap-2">
-            <Terminal className="h-5 w-5 text-blue-400" />
-            <h2 className="text-base font-bold">AI Multi-Agent Orchestrator</h2>
-          </div>
-          <Link href="/workflow" className="flex items-center gap-1.5 rounded-lg border border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 px-3 py-1 text-xs font-bold text-blue-400 duration-200">
-            <GitBranch className="h-3.5 w-3.5" />
-            <span>Interactive Workflow View</span>
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1 text-[10px] text-zinc-550 font-bold font-mono">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping inline-block" />
+            LIVE TELEMETRY REFRESHING (10S)
+          </span>
+
+          <Link
+            href="/operations"
+            className="flex items-center justify-center h-9 px-4 rounded-xl border border-zinc-800 bg-zinc-950/60 hover:bg-zinc-900 text-xs font-bold text-white transition-all select-none"
+          >
+            <span>Operations Log</span>
           </Link>
         </div>
-        <p className="text-xs text-zinc-400">
-          Input an operational command or enquiry. The Orchestrator will classify the intent and trigger the correct analytics agents.
-        </p>
-
-        <form onSubmit={handleOrchestrate} className="flex gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-3 h-4 w-4 text-zinc-500" />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="e.g. Find wheelchair routings, check crowd capacity of east stand, safety status..."
-              className="w-full h-10 rounded-xl border border-zinc-800/90 bg-zinc-950/80 pl-10 pr-4 text-xs text-white placeholder-zinc-650 outline-none focus:border-blue-500/80 transition-all"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={orchestratorLoading}
-            className="flex items-center justify-center gap-1.5 h-10 px-5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition-all disabled:opacity-50 active:scale-95 duration-200"
-          >
-            {orchestratorLoading ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <>
-                <span>Orchestrate</span>
-                <Send className="h-3 w-3" />
-              </>
-            )}
-          </button>
-        </form>
-
-        {/* Display Orchestrator Results */}
-        {orchestratorResult && (
-          <div className="space-y-4 pt-2">
-            {/* Step 1: Orchestration Info */}
-            <div className="rounded-2xl border border-zinc-800/80 bg-zinc-950/50 p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-blue-500 animate-ping" />
-                  <span className="text-xs font-bold text-zinc-300 uppercase tracking-wider font-mono">
-                    PIPELINE INTENT: {orchestratorResult.intent}
-                  </span>
-                </div>
-                <div className="flex gap-1.5 flex-wrap">
-                  {orchestratorResult.selected_agents.map((agt) => (
-                    <span key={agt} className="rounded-full bg-blue-500/10 border border-blue-500/30 px-2.5 py-0.5 text-[10px] font-semibold text-blue-400 capitalize">
-                      {agt} agent active
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <p className="text-xs text-zinc-400">
-                {orchestratorResult.message}
-              </p>
-            </div>
-
-            {/* Step 2: Individual Sub-Agent Telemetry Outputs */}
-            {orchestratorResult.sub_agent_responses && orchestratorResult.sub_agent_responses.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                {orchestratorResult.sub_agent_responses.map((agentData, idx) => (
-                  <div key={idx} className="rounded-xl border border-zinc-805 bg-zinc-900/40 p-3.5 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-white capitalize">{agentData.agent} Agent</span>
-                      <StatusBadge status={agentData.status} label={agentData.status?.toUpperCase() || 'SUCCESS'} />
-                    </div>
-                    <div className="text-[11px] text-zinc-400 font-mono space-y-1">
-                      {Object.entries(agentData.data || {}).map(([key, val]) => (
-                        <div key={key} className="flex justify-between">
-                          <span className="text-zinc-500">{key}:</span>
-                          <span className="text-zinc-305 font-semibold truncate max-w-[120px]">{String(val)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Step 3: Decision Output */}
-            {orchestratorResult.decision && (
-              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.02] p-5 space-y-4">
-                <div className="flex items-center justify-between border-b border-zinc-800/60 pb-3">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4.5 w-4.5 text-emerald-400" />
-                    <span className="text-sm font-bold text-white">Central Decision Recommendation</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] text-zinc-450 font-bold">CONFIDENCE: {orchestratorResult.decision.confidence}%</span>
-                    <StatusBadge
-                      status={orchestratorResult.decision.priority === 'High' ? 'danger' : orchestratorResult.decision.priority === 'Medium' ? 'warning' : 'success'}
-                      label={`${orchestratorResult.decision.priority} Priority`}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <h4 className="text-xs font-bold text-zinc-300 font-mono">OPERATIONAL SUMMARY:</h4>
-                  <p className="text-xs text-zinc-400 leading-relaxed">
-                    {orchestratorResult.decision.summary}
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-1">
-                  <h4 className="text-xs font-semibold text-emerald-400">DIRECTED ACTION INSTRUCTIONS:</h4>
-                  <p className="text-xs text-white leading-relaxed font-bold">
-                    {orchestratorResult.decision.recommendation}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
       </motion.div>
 
-      {/* Dashboard Quick Stats */}
+      {/* Grid Section 1: Live Stadium Overview KPI Cards (6 columns) */}
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="show"
-        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5"
+        className="grid grid-cols-2 lg:grid-cols-6 gap-3"
       >
-        {stats.map((stat) => (
-          <motion.div key={stat.title} variants={itemVariants}>
-            <StatCard
-              title={stat.title}
-              value={stat.value}
-              change={stat.change}
-              changeType={stat.changeType}
-              icon={stat.icon}
-              status={stat.status}
-              description={stat.description}
-            />
-          </motion.div>
-        ))}
+        <motion.div variants={itemVariants}>
+          <KPICard
+            title="Crowd Occupancy"
+            value={`${crowdCount.toLocaleString()} / 75,000`}
+            progress={Math.round((crowdCount / 75000) * 100)}
+            icon={Users}
+            status="info"
+            description="Overall seats occupied"
+          />
+        </motion.div>
+
+        <motion.div variants={itemVariants}>
+          <KPICard
+            title="Active Incidents"
+            value={`${activeIncidents} Alerts`}
+            icon={ShieldAlert}
+            status={activeIncidents > 2 ? 'danger' : 'warning'}
+            description="Open operations items"
+          />
+        </motion.div>
+
+        <motion.div variants={itemVariants}>
+          <KPICard
+            title="Navigation Requests"
+            value={`${navRequests.toLocaleString()} / hr`}
+            icon={Map}
+            status="info"
+            description="Route redirection calls"
+          />
+        </motion.div>
+
+        <motion.div variants={itemVariants}>
+          <KPICard
+            title="Access Requests"
+            value={`${accessRequests} Jobs`}
+            icon={Accessibility}
+            status="warning"
+            description="Cart & ramp calls active"
+          />
+        </motion.div>
+
+        <motion.div variants={itemVariants}>
+          <KPICard
+            title="AI Confidence"
+            value={`${aiConfidence}%`}
+            icon={BrainCircuit}
+            status="success"
+            progress={aiConfidence}
+            description="Decision logic score"
+          />
+        </motion.div>
+
+        <motion.div variants={itemVariants}>
+          <KPICard
+            title="System Health"
+            value={`${overallHealth}%`}
+            icon={Activity}
+            status="success"
+            progress={overallHealth}
+            description="Backend microservices uptime"
+          />
+        </motion.div>
       </motion.div>
 
-      {/* Secondary Row: Timeline, Alerts, Match Details */}
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-        {/* Left Column: Recent Alerts (7 cols on lg) */}
-        <div className="space-y-6 lg:col-span-7">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <AlertOctagon className="h-5 w-5 text-zinc-400" />
-              <h2 className="text-lg font-bold tracking-tight text-white">Recent Operations Alerts</h2>
-            </div>
-            <button className="flex items-center text-xs font-bold text-blue-500 hover:text-blue-400 transition-colors">
-              <span>View operational center</span>
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
+      {/* Grid Section 2: AI Orchestrated Console and Recommendation */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left 7 cols: Orchestrated Query & Trace */}
+        <div className="lg:col-span-7 space-y-6">
+          <div className="rounded-3xl border border-zinc-800/80 bg-zinc-900/10 p-6 backdrop-blur-md space-y-4">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <Terminal className="h-4.5 w-4.5 text-blue-400" />
+              <span>AI Agentic Decision Console</span>
+            </h3>
 
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="show"
-            className="space-y-4"
-          >
-            {recentAlerts.map((alert) => (
-              <motion.div key={alert.id} variants={itemVariants}>
-                <AlertCard
-                  title={alert.title}
-                  description={alert.description}
-                  timestamp={alert.timestamp}
-                  severity={alert.severity}
-                  location={alert.location}
-                  status={alert.status}
-                  onActionClick={() => console.log('Respond click')}
-                  actionText="Dispatch Team"
+            <form onSubmit={handleOrchestrate} className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-550" />
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="e.g. Crowd congestion reported near East Stand. Advise bypass routings."
+                  className="w-full h-9 pl-9 pr-3 rounded-lg border border-zinc-800/80 bg-zinc-950/80 text-xs text-white placeholder-zinc-600 outline-none focus:border-blue-500 transition-all font-medium"
                 />
-              </motion.div>
-            ))}
-          </motion.div>
+              </div>
+              <button
+                type="submit"
+                disabled={orchestratorLoading || !query.trim()}
+                className="flex items-center justify-center gap-1.5 h-9 px-4 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition-all disabled:opacity-50 active:scale-95 duration-200 select-none shrink-0"
+              >
+                {orchestratorLoading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <>
+                    <span>Orchestrate</span>
+                    <Send className="h-3 w-3" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            <AnimatePresence mode="wait">
+              {orchestratorResult ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="space-y-4"
+                >
+                  {/* Traced intent metadata */}
+                  <div className="border border-zinc-800/80 bg-zinc-950/40 p-3 rounded-xl flex items-center justify-between text-xs">
+                    <span className="font-bold text-zinc-400 uppercase tracking-widest font-mono">
+                      INTENT DETECTED: {orchestratorResult.intent}
+                    </span>
+                    <span className="text-zinc-500 font-mono font-semibold">{queryTimestamp}</span>
+                  </div>
+
+                  <p className="text-xs text-zinc-450 leading-relaxed italic bg-zinc-950/40 p-3 rounded-xl border border-zinc-800/30">
+                    {"\""}{query}{"\""}
+                  </p>
+
+                  {/* Sub-Agent Activated Row */}
+                  <div className="space-y-2">
+                    <h4 className="text-[10px] font-bold text-zinc-550 uppercase tracking-wider font-mono">
+                      Agent Tracing Steps
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {orchestratorResult.sub_agent_responses?.map((agt) => (
+                        <AgentExecutionCard
+                          key={agt.agent}
+                          agentName={agt.agent}
+                          status={agt.status}
+                          executionTime="310ms"
+                          confidence={88}
+                          details={agt.data}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Re-consolidated Decision output */}
+                  {orchestratorResult.decision && (
+                    <AIRecommendationCard
+                      title="Decision Recommendation"
+                      summary={orchestratorResult.decision.summary}
+                      recommendation={orchestratorResult.decision.recommendation}
+                      priority={orchestratorResult.decision.priority}
+                      confidence={orchestratorResult.decision.confidence}
+                      location={orchestratorResult.intent}
+                      timestamp={queryTimestamp}
+                    />
+                  )}
+                </motion.div>
+              ) : (
+                <div className="border border-dashed border-zinc-800/80 rounded-xl p-8 text-center text-zinc-500 font-medium text-xs">
+                  {orchestratorLoading ? (
+                    <div className="space-y-3 flex flex-col items-center justify-center">
+                      <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                      <span>Orchestrating AI Sub-agent execution pipeline...</span>
+                    </div>
+                  ) : (
+                    "Submit queries to engage the Orchestrator and observe sub-agent executions."
+                  )}
+                </div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
-        {/* Right Column: Timeline & Match Card (5 cols on lg) */}
-        <div className="space-y-8 lg:col-span-5">
-          {/* Upcoming Match Card */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-bold tracking-tight text-white flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-zinc-400" />
-              <span>Upcoming Match Information</span>
-            </h2>
+        {/* Right 5 cols: Latest Recommendation & Map */}
+        <div className="lg:col-span-5 space-y-6">
+          {/* AI Recommendation Panel */}
+          {orchestratorResult?.decision ? (
+            <div className="space-y-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <BrainCircuit className="h-4.5 w-4.5 text-emerald-400" />
+                <span>Active Recommendation Directive</span>
+              </h3>
+              <AIRecommendationCard
+                title="Consolidated Decision directive"
+                summary={orchestratorResult.decision.summary}
+                recommendation={orchestratorResult.decision.recommendation}
+                priority={orchestratorResult.decision.priority}
+                confidence={orchestratorResult.decision.confidence}
+                location={orchestratorResult.intent}
+                timestamp={queryTimestamp}
+              />
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <BrainCircuit className="h-4.5 w-4.5 text-zinc-450" />
+                <span>Default AI Recommendation Directive</span>
+              </h3>
+              <AIRecommendationCard
+                title="Operational Safety Directive"
+                summary="Concourse crowd flow metrics in East Stand indicate crowding limits are close to red alerts. Rerouting is scheduled."
+                recommendation="Direct Sector 3 entry gates to lock arriving queues and shift ticket flow to MetLife West Gate entrance."
+                priority="High"
+                confidence={92}
+                location="East Stand concourse"
+                timestamp="12:15:30"
+              />
+            </div>
+          )}
 
-            <motion.div
-              whileHover={{ y: -3 }}
-              className="rounded-2xl border border-zinc-800/80 bg-gradient-to-b from-zinc-900/60 to-zinc-950/20 p-5 backdrop-blur-md"
-            >
-              <div className="flex justify-between items-center pb-4 border-b border-zinc-800/60">
-                <span className="text-[10px] font-bold text-zinc-550 tracking-wider">MATCHDAY 3 - GROUP A</span>
-                <StatusBadge status="success" label="NORMAL SECURITY" />
-              </div>
+          {/* Interactive Stadium Map Placeholder */}
+          <div className="rounded-3xl border border-zinc-800/80 bg-zinc-900/10 p-5 backdrop-blur-md space-y-4">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <Map className="h-4.5 w-4.5 text-blue-400" />
+              <span>Interactive Stadium Map</span>
+            </h3>
 
-              <div className="flex items-center justify-around py-6">
-                {/* Home Team */}
-                <div className="flex flex-col items-center">
-                  <div className="text-3xl filter drop-shadow-[0_4px_10px_rgba(255,255,255,0.1)]">🇺🇸</div>
-                  <span className="font-bold text-white text-sm mt-2">United States</span>
-                  <span className="text-[10px] text-zinc-500 font-semibold mt-0.5">HOST</span>
-                </div>
+            {/* Clickable Map Layout Placeholder */}
+            <div className="flex flex-col items-center">
+              <svg viewBox="0 0 320 220" className="w-full max-w-[280px] h-auto text-zinc-650" aria-label="Stadium Sectors outline map">
+                {/* Outer Boundary */}
+                <rect x="10" y="10" width="300" height="200" rx="30" fill="none" stroke="#27272a" strokeWidth="2" />
 
-                <div className="flex flex-col items-center">
-                  <span className="text-zinc-500 text-xs font-bold font-mono">VS</span>
-                  <div className="w-[1px] h-6 bg-zinc-800 my-1" />
-                  <span className="text-[10px] font-bold text-blue-500 font-mono">20:00 EST</span>
-                </div>
+                {/* Pitch Area */}
+                <rect x="110" y="70" width="100" height="80" rx="5" fill="#18181b" stroke="#3f3f46" strokeWidth="1.5" />
+                {/* Center circle */}
+                <circle cx="160" cy="110" r="16" fill="none" stroke="#3f3f46" strokeWidth="1.5" />
 
-                {/* Away Team */}
-                <div className="flex flex-col items-center">
-                  <div className="text-3xl filter drop-shadow-[0_4px_10px_rgba(255,255,255,0.1)]">🏴󠁧󠁢󠁥󠁮󠁧󠁿</div>
-                  <span className="font-bold text-white text-sm mt-2">England</span>
-                  <span className="text-[10px] text-zinc-500 font-semibold mt-0.5">GUEST</span>
-                </div>
-              </div>
+                {/* Stands clickable polygon paths */}
+                {/* North Stand */}
+                <polygon
+                  points="20,20 300,20 250,55 70,55"
+                  fill={selectedZone?.name === 'North Stand' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(9, 9, 11, 0.5)'}
+                  stroke={selectedZone?.name === 'North Stand' ? '#3b82f6' : '#27272a'}
+                  strokeWidth="2"
+                  className="cursor-pointer hover:fill-blue-500/10 transition-all focus:outline-none"
+                  onClick={() => setSelectedZone(zones[0])}
+                  tabIndex={0}
+                  aria-label="North Stand"
+                />
 
-              <div className="grid grid-cols-2 gap-3 pt-4 border-t border-zinc-800/60 text-xs font-medium text-zinc-450">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-3.5 w-3.5 text-zinc-500" />
-                  <span>MetLife Stadium, NJ</span>
-                </div>
-                <div className="flex items-center gap-2 justify-self-end">
-                  <Users className="h-3.5 w-3.5 text-zinc-500" />
-                  <span>78,500 expected</span>
-                </div>
-              </div>
-            </motion.div>
-          </div>
+                {/* East Stand */}
+                <polygon
+                  points="300,20 300,200 255,160 255,60"
+                  fill={selectedZone?.name === 'East Stand' ? 'rgba(239, 68, 68, 0.25)' : 'rgba(9, 9, 11, 0.5)'}
+                  stroke={selectedZone?.name === 'East Stand' ? '#ef4444' : '#27272a'}
+                  strokeWidth="2"
+                  className="cursor-pointer hover:fill-red-500/10 transition-all focus:outline-none"
+                  onClick={() => setSelectedZone(zones[2])}
+                  tabIndex={0}
+                  aria-label="East Stand"
+                />
 
-          {/* Recent Activity Timeline */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold tracking-tight text-white flex items-center gap-2">
-                <Activity className="h-5 w-5 text-zinc-400" />
-                <span>Stadium Operations Log</span>
-              </h2>
-              <span className="text-[10px] font-bold font-mono text-zinc-500">LIVE FEED</span>
+                {/* South Stand */}
+                <polygon
+                  points="20,200 300,200 250,165 70,165"
+                  fill={selectedZone?.name === 'South Stand' ? 'rgba(234, 179, 8, 0.2)' : 'rgba(9, 9, 11, 0.5)'}
+                  stroke={selectedZone?.name === 'South Stand' ? '#eab308' : '#27272a'}
+                  strokeWidth="2"
+                  className="cursor-pointer hover:fill-yellow-500/10 transition-all focus:outline-none"
+                  onClick={() => setSelectedZone(zones[1])}
+                  tabIndex={0}
+                  aria-label="South Stand"
+                />
+
+                {/* West Stand */}
+                <polygon
+                  points="20,20 20,200 65,160 65,60"
+                  fill={selectedZone?.name === 'West Stand' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(9, 9, 11, 0.5)'}
+                  stroke={selectedZone?.name === 'West Stand' ? '#3b82f6' : '#27272a'}
+                  strokeWidth="2"
+                  className="cursor-pointer hover:fill-blue-500/10 transition-all focus:outline-none"
+                  onClick={() => setSelectedZone(zones[3])}
+                  tabIndex={0}
+                  aria-label="West Stand"
+                />
+              </svg>
             </div>
 
-            <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/10 p-5 backdrop-blur-md max-h-[360px] overflow-y-auto">
-              <div className="flow-root">
-                {timelineEvents.map((event) => (
-                  <TimelineCard
-                    key={event.id}
-                    time={event.time}
-                    title={event.title}
-                    description={event.description}
-                    category={event.category}
-                    status={event.status}
-                  />
-                ))}
-              </div>
-            </div>
+            <AnimatePresence mode="wait">
+              {selectedZone && (
+                <motion.div
+                  key={selectedZone.name}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="border border-zinc-800 bg-zinc-950/60 p-4 rounded-2xl space-y-3"
+                >
+                  <div className="flex justify-between items-center pb-2 border-b border-zinc-900/60">
+                    <span className="text-xs font-bold text-white">{selectedZone.name} Details</span>
+                    <span className={`inline-flex px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${selectedZone.color === 'red' ? 'bg-red-500/10 text-red-550 border border-red-500/20' :
+                      selectedZone.color === 'yellow' ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20' :
+                        'bg-emerald-500/10 text-emerald-450 border border-emerald-500/20'
+                      }`}>
+                      {selectedZone.crowdLevel}
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <AnimatedProgressBar value={selectedZone.occupancy} label="Stand Density Capacity" theme={selectedZone.color === 'red' ? 'red' : selectedZone.color === 'yellow' ? 'yellow' : 'emerald'} />
+
+                    <div className="grid grid-cols-2 gap-2 text-[10px] font-semibold text-zinc-500 font-mono pt-1">
+                      <div>
+                        <span>RISK: </span>
+                        <span className={`font-bold ${selectedZone.color === 'red' ? 'text-red-500' : 'text-zinc-350'}`}>{selectedZone.riskLevel}</span>
+                      </div>
+                      <div className="justify-self-end">
+                        <span>INCIDENTS: </span>
+                        <span className="text-zinc-350">{selectedZone.incidents} active</span>
+                      </div>
+                    </div>
+
+                    <div className="text-[10px] text-zinc-400 bg-zinc-950/80 p-2.5 rounded-lg border border-zinc-900 leading-relaxed">
+                      <span className="font-bold text-zinc-350">Status: </span>
+                      {selectedZone.status}
+                    </div>
+
+                    <div className="text-[10px] text-emerald-400 bg-emerald-500/[0.02] p-2.5 rounded-lg border border-emerald-500/15 leading-relaxed font-bold">
+                      <span className="font-bold text-emerald-500 uppercase tracking-widest text-[8px] block mb-0.5 font-mono">Directive recommendation</span>
+                      {selectedZone.recommendation}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
+        </div>
+      </div>
+
+      {/* Grid Section 3: Stadium Zones Cards Grid */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-white flex items-center gap-2">
+            <Smartphone className="h-4.5 w-4.5 text-zinc-400" />
+            <span>Stadium Sectors & Facilities Directory</span>
+          </h3>
+          <span className="text-[9px] uppercase tracking-wider text-zinc-550 font-bold font-mono">Interactive Cards</span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+          {zones.map((zone) => (
+            <ZoneCard
+              key={zone.name}
+              name={zone.name}
+              crowdLevel={zone.crowdLevel}
+              riskLevel={zone.riskLevel}
+              status={zone.status}
+              color={zone.color}
+              isSelected={selectedZone?.name === zone.name}
+              onClick={() => setSelectedZone(zone)}
+            />
+          ))}
         </div>
       </div>
     </PageContainer>

@@ -1,9 +1,9 @@
 import json
 from typing import Dict, Any, List
 
-from backend.utils.prompt_loader import load_prompt
-from backend.services.gemini_service import gemini_service
-from backend.utils.logger import logger
+from utils.prompt_loader import load_prompt
+from services.gemini_service import gemini_service
+from utils.logger import logger
 
 class DecisionAgent:
     def process(self, query: str, sub_agent_responses: List[Dict[str, Any]]) -> Dict[str, Any]:

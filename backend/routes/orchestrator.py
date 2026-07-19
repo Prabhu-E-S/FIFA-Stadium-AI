@@ -1,13 +1,13 @@
 from fastapi import APIRouter, HTTPException
-from backend.models.request_models import OrchestratorRequest
-from backend.models.response_models import OrchestratorResponse
-from backend.agents.orchestrator import OrchestratorAgent
-from backend.agents.navigation_agent import NavigationAgent
-from backend.agents.crowd_agent import CrowdAgent
-from backend.agents.emergency_agent import EmergencyAgent
-from backend.agents.accessibility_agent import AccessibilityAgent
-from backend.agents.decision_agent import DecisionAgent
-from backend.utils.logger import log_agent_execution, log_error, logger
+from models.request_models import OrchestratorRequest
+from models.response_models import OrchestratorResponse
+from agents.orchestrator import OrchestratorAgent
+from agents.navigation_agent import NavigationAgent
+from agents.crowd_agent import CrowdAgent
+from agents.emergency_agent import EmergencyAgent
+from agents.accessibility_agent import AccessibilityAgent
+from agents.decision_agent import DecisionAgent
+from utils.logger import log_agent_execution, log_error, logger
 import time
 
 router = APIRouter()

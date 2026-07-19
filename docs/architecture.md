@@ -4,7 +4,7 @@ This document describes the high-level system architecture and request flow patt
 
 ## Overall Architecture
 
-StadiumBrain AI operates as a decoupled, multi-agent command structure combining a responsive Next.js frontend console with a FastAPI-driven Python backend.
+StadiumBrain AI operates as a decoupled, multi-agent command structure combining a responsive Next.js frontend console with a FastAPI-driven Python 
 
 ```mermaid
 graph TB

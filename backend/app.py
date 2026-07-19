@@ -3,10 +3,10 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import time
 
-from backend.config import config
-from backend.utils.logger import log_request, log_error, logger
-from backend.routes import orchestrator, navigation, crowd, emergency, accessibility
-from backend.services.gemini_service import gemini_service # Trigger initialization
+from config import config
+from utils.logger import log_request, log_error, logger
+from routes import orchestrator, navigation, crowd, emergency, accessibility
+from services.gemini_service import gemini_service # Trigger initialization
 
 app = FastAPI(
     title="StadiumBrain AI Backend",

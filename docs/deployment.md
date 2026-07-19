@@ -16,7 +16,7 @@ The Next.js application compiles with ESLint and TypeScript rules.
 The python backend is a standard FastAPI server.
 1. Create a `Web Service` on Render.
 2. Build Command: `pip install -r backend/requirements.txt`
-3. Start Command: `uvicorn backend.app:app --host 0.0.0.0 --port $PORT`
+3. Start Command: `uvicorn app:app --host 0.0.0.0 --port $PORT`
 4. Set Environment Variables:
    - `GEMINI_API_KEY`: Google Generative AI API Token.
    - `PORT`: Set dynamically by Render environment.

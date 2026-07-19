@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
-from backend.models.request_models import AgentQueryRequest
-from backend.models.response_models import CrowdResponse
-from backend.agents.crowd_agent import CrowdAgent
-from backend.utils.logger import log_agent_execution, log_error
+from models.request_models import AgentQueryRequest
+from models.response_models import CrowdResponse
+from agents.crowd_agent import CrowdAgent
+from utils.logger import log_agent_execution, log_error
 import time
 
 router = APIRouter()

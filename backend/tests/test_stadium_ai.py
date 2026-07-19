@@ -1,9 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch
-from backend.app import app
-from backend.utils.prompt_loader import load_prompt
-from backend.agents.orchestrator import OrchestratorAgent
+from app import app
+from utils.prompt_loader import load_prompt
+from agents.orchestrator import OrchestratorAgent
 
 client = TestClient(app)
 
@@ -34,7 +34,7 @@ def test_orchestrator_fallbacks():
     r3 = agent._get_fallback("gate capacity load levels")
     assert "crowd" in r3["selected_agents"]
 
-@patch("backend.services.gemini_service.gemini_service.generate_json")
+@patch("services.gemini_service.gemini_service.generate_json")
 def test_orchestrator_agent_mocked(mock_generate):
     """
     Asserts Orchestrator parses response matching schema formats.
@@ -62,7 +62,7 @@ def test_routes_empty_query():
     assert "decision" in res_json
     assert res_json["decision"]["confidence"] == 100
 
-@patch("backend.services.gemini_service.gemini_service.generate_json")
+@patch("services.gemini_service.gemini_service.generate_json")
 def test_pipeline_routing_mocks(mock_generate):
     """
     Validates multi-agent call routing and consolidation decision aggregation.

@@ -1,8 +1,8 @@
 import json
 from typing import Dict, Any
-from backend.utils.prompt_loader import load_prompt
-from backend.services.gemini_service import gemini_service
-from backend.utils.logger import logger
+from utils.prompt_loader import load_prompt
+from services.gemini_service import gemini_service
+from utils.logger import logger
 
 class OrchestratorAgent:
     def process(self, query: str) -> Dict[str, Any]:

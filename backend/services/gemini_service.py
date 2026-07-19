@@ -1,8 +1,8 @@
 import json
 import re
 import google.generativeai as genai
-from backend.config import config
-from backend.utils.logger import logger
+from config import config
+from utils.logger import logger
 
 class GeminiService:
     def __init__(self) -> None:
